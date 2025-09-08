@@ -2,20 +2,17 @@ version: 0.2
 
 env:
   variables:
-    ECR_REPO_NAME: my-outfit-backend
+    # your full repo URI (no tag)
+    ECR_REPO_URI: 835405530238.dkr.ecr.us-east-1.amazonaws.com/my-outfit-backend
 
 phases:
   pre_build:
     commands:
       - set -e
-      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - REGION=${AWS_REGION:-us-east-1}
-      - |
-        if [ -z "$ACCOUNT_ID" ] || [ "$ACCOUNT_ID" = "None" ]; then
-          echo "ERROR: Could not resolve AWS account id"; exit 1; fi
-      - ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
-      - ECR_REPO_URI="${ECR_REGISTRY}/${ECR_REPO_NAME}"
-      - echo "Logging in to ECR: $ECR_REGISTRY"
+      # Extract the registry host from the repo URI (everything before the first '/')
+      - ECR_REGISTRY=$(echo "$ECR_REPO_URI" | cut -d'/' -f1)
+      - echo "Logging in to ECR: $ECR_REGISTRY (region=$REGION)"
       - aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
   build:
