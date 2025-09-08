@@ -1,6 +1,7 @@
 // app/components/OutfitCard.tsx
 "use client";
 
+import Image from "next/image";
 import { Outfit } from "@/app/types/api";
 
 /** color word → hex (expand anytime) */
@@ -41,23 +42,26 @@ const COLOR_MAP: Record<string, string> = {
   pink: "#ec4899",
 };
 
-// ✅ Make sizes explicit and uniform
+// explicit, uniform sizes
 const ICON_SIZE = 44;
 const SWATCH_SIZE = 44;
 
-/** return per-item color … (unchanged) */
+type ItemKey = "top" | "bottom" | "shoes" | "outerwear" | "layer" | "accessories";
+type ItemsColors = Partial<Record<ItemKey, string>>;
+
+/** return per-item color from explicit items_colors or infer from text */
 function perItemColor(
-  key: "top" | "bottom" | "shoes" | "outerwear" | "layer" | "accessories",
+  key: ItemKey,
   text?: string | null,
-  itemsColors?: Record<string, unknown>
+  itemsColors?: ItemsColors
 ): string | undefined {
-  const hex = String(itemsColors?.[key] || "").trim();
+  const hex = (itemsColors?.[key] ?? "").trim();
   if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)) return hex;
 
   const t = (text || "").toLowerCase();
   for (const k of Object.keys(COLOR_MAP)) {
     if (t.includes(k) || t.includes(`dark ${k}`) || t.includes(`light ${k}`)) {
-      return COLOR_MAP[k];
+      return COLOR_MAP[k as keyof typeof COLOR_MAP];
     }
   }
   return undefined;
@@ -74,9 +78,10 @@ export default function OutfitCard({
 }) {
   const it = outfit.items || {};
   const img = outfit.icons_img || {};
-  const itemsColors = (outfit as any).items_colors as
-    | Partial<Record<"top" | "bottom" | "shoes" | "outerwear" | "layer" | "accessories", string>>
-    | undefined;
+  // Safely read optional items_colors typed as ItemsColors
+  const itemsColors: ItemsColors | undefined = (outfit as Outfit & {
+    items_colors?: ItemsColors;
+  }).items_colors;
 
   const cTop = perItemColor("top", it.top, itemsColors);
   const cBottom = perItemColor("bottom", it.bottom, itemsColors);
@@ -88,11 +93,11 @@ export default function OutfitCard({
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--text)] p-4 shadow-sm">
-      <ItemRow label="Top"       text={it.top}       img={img.top}       emoji="👕" color={cTop} />
-      <ItemRow label="Bottom"    text={it.bottom}    img={img.bottom}    emoji="👖" color={cBottom} />
-      <ItemRow label="Shoes"     text={it.shoes}     img={img.shoes}     emoji="👞" color={cShoes} />
-      <ItemRow label="Outerwear" text={it.outerwear} img={img.outerwear} emoji="🧥" color={cOuter} />
-      <ItemRow label="Layer"     text={it.layer}     img={img.layer}     emoji="🧶" color={cLayer} />
+      <ItemRow label="Top"       text={it.top}       img={img.top ?? null}       emoji="👕" color={cTop} />
+      <ItemRow label="Bottom"    text={it.bottom}    img={img.bottom ?? null}    emoji="👖" color={cBottom} />
+      <ItemRow label="Shoes"     text={it.shoes}     img={img.shoes ?? null}     emoji="👞" color={cShoes} />
+      <ItemRow label="Outerwear" text={it.outerwear} img={img.outerwear ?? null} emoji="🧥" color={cOuter} />
+      <ItemRow label="Layer"     text={it.layer}     img={img.layer ?? null}     emoji="🧶" color={cLayer} />
       <ItemRow
         label="Accessories"
         text={(it.accessories || []).join(", ")}
@@ -142,7 +147,9 @@ function ItemRow({
   emoji: string;
   color?: string;
 }) {
-  const ringStyle = color ? { boxShadow: `0 0 0 2px ${color} inset` } : undefined;
+  const ringStyle: React.CSSProperties | undefined = color
+    ? { boxShadow: `0 0 0 2px ${color} inset` }
+    : undefined;
 
   return (
     <div className="flex items-center gap-3 py-2 border-b border-[var(--border)] last:border-b-0">
@@ -151,7 +158,7 @@ function ItemRow({
       </span>
 
       <span className="inline-flex items-center gap-3 flex-1">
-        {/* ✅ icon with hard 44×44 size */}
+        {/* icon with hard 44×44 size */}
         <span
           className="icon-shell"
           style={{
@@ -163,20 +170,25 @@ function ItemRow({
             display: "grid",
             placeItems: "center",
             background: "var(--card)",
+            overflow: "hidden",
           }}
         >
           {img ? (
-            <img
+            <Image
+              // data URL constructed by backend: raw base64 png
               src={`data:image/png;base64,${img}`}
               alt={label}
-              style={{ width: ICON_SIZE - 8, height: ICON_SIZE - 8, objectFit: "contain" }}
+              width={ICON_SIZE - 8}
+              height={ICON_SIZE - 8}
+              style={{ objectFit: "contain" }}
+              priority={false}
             />
           ) : (
             <span className="icon-emoji" aria-hidden style={{ fontSize: 20 }}>{emoji}</span>
           )}
         </span>
 
-        {/* ✅ per-item color swatch, hard 44×44 */}
+        {/* per-item color swatch, hard 44×44 */}
         <span
           style={{
             width: SWATCH_SIZE,
