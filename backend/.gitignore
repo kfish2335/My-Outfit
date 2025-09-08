@@ -97,7 +97,7 @@ dmypy.json
 .prof
 
 # Local .env files
-.env.local
-.env.dev
-.env.test
-.env.prod
+# env / secrets
+*.env
+*.env.*
+backend.env
