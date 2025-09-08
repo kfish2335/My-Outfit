@@ -1,0 +1,24 @@
+version: 1.0
+runtime: docker
+
+docker:
+  file: backend/Dockerfile        # path from repo root
+  build:
+    context: backend              # build context directory
+
+port: 8000
+
+health_check:
+  path: /health
+  interval: 10
+  timeout: 5
+  healthy_threshold: 1
+  unhealthy_threshold: 5
+
+env:
+  variables:
+    ENV: "prod"
+    # During initial wiring you can use "*" then lock it down to your frontend domain
+    ALLOWED_ORIGINS: "https://your-frontend-domain.example.com"
+# Secrets: add via App Runner console → Environment variables → Value source: Secrets Manager
+# e.g. OPENAI_API_KEY, OPENAI_MODEL

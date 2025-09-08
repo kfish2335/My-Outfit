@@ -1,0 +1,22 @@
+version: 1.0
+runtime: docker
+
+docker:
+  file: frontend/Dockerfile
+  build:
+    context: frontend
+
+port: 3000
+
+health_check:
+  path: /
+  interval: 10
+  timeout: 5
+  healthy_threshold: 1
+  unhealthy_threshold: 5
+
+env:
+  variables:
+    NODE_ENV: "production"
+    # Point the UI at the backend App Runner URL (or your custom API domain)
+    NEXT_PUBLIC_API_BASE: "https://<your-backend-app-runner>.awsapprunner.com"
