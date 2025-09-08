@@ -1,0 +1,29 @@
+# buildspec.yml  (repo root)
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "CodeBuild environment:"
+      - python --version
+      - pip --version
+  pre_build:
+    commands:
+      - echo "Preparing EB bundle structure"
+      - rm -rf build dist && mkdir -p build
+      # Copy EB control files if present
+      - if [ -f Procfile ]; then cp Procfile build/; fi
+      - if [ -d .ebextensions ]; then cp -R .ebextensions build/.ebextensions; fi
+      - if [ -d .platform ]; then cp -R .platform build/.platform; fi
+      # Copy backend app
+      - cp -R backend build/backend
+  build:
+    commands:
+      - echo "Creating application zip for EB"
+      - cd build
+      - zip -r ../app.zip .
+      - cd ..
+artifacts:
+  files:
+    - app.zip
+  discard-paths: yes
