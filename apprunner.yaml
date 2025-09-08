@@ -1,21 +1,22 @@
+# apprunner.yaml  (place at the repo root)
 version: 1.0
 runtime: python3
 
 build:
   commands:
-    # Change into backend folder
-    - cd backend
-    - pip install -r requirements.txt
+    # run pip against the backend requirements file (no need to cd)
+    build:
+      - pip install --no-cache-dir -r backend/requirements.txt
 
 run:
-  command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+  # start your FastAPI app from within the backend folder
+  command: sh -c "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000"
   network:
     port: 8000
 
-# Optional: health check for App Runner
 health_check:
   path: /health
-  interval: 10      # seconds between checks
-  timeout: 5        # seconds before timing out
+  interval: 10
+  timeout: 5
   healthy_threshold: 1
   unhealthy_threshold: 5
