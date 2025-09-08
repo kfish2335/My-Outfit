@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    ECR_REPO_NAME: my-outfit    # <-- set your ECR repo name
+    ECR_REPO_NAME: 835405530238.dkr.ecr.us-east-1.amazonaws.com/my-outfit-backend    # <-- set your ECR repo name
 
 phases:
   pre_build:
