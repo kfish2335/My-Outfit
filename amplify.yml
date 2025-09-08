@@ -16,5 +16,5 @@ applications:
       cache:
         paths:
           - node_modules/**/*
-    environment:
-      NEXT_PUBLIC_API_BASE: https://<your-backend-app-runner-or-EB-url>
+    #environment:
+      #NEXT_PUBLIC_API_BASE: https://<your-backend-app-runner-or-EB-url>
