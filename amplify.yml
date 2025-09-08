@@ -10,13 +10,11 @@ applications:
           commands:
             - npm run build
       artifacts:
-        # Amplify detects Next.js and serves from .next automatically
         baseDirectory: .next
         files:
           - '**/*'
       cache:
         paths:
           - node_modules/**/*
-    # Set env vars in Amplify console (Build settings → Environment variables)
-    # e.g. NEXT_PUBLIC_API_BASE=https://<your-backend-app-runner-url>
-    
+    environment:
+      NEXT_PUBLIC_API_BASE: https://<your-backend-app-runner-or-EB-url>
