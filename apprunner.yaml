@@ -1,7 +1,7 @@
-# apprunner.yaml  (put this at the repo root)
+# apprunner.yaml  (place at repo root)
 version: 1.0
 runtime: python3
-# runtime_version: "3.12"   # optionally pin a Python version that App Runner supports
+# runtime_version: "3.12"   # uncomment to pin, if supported by your account
 
 build:
   commands:
@@ -10,10 +10,9 @@ build:
     build:
       - pip install --no-cache-dir -r backend/requirements.txt
     post-build:
-      - echo "Build finished"
+      - echo "Build complete"
 
 run:
-  # Start your FastAPI app from the backend folder
   command: sh -c "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000"
   network:
     port: 8000
