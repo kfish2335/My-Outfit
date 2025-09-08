@@ -1,8 +1,7 @@
 version: 0.2
-
 env:
   variables:
-    # your full repo URI (no tag)
+    # put YOUR full repo URI here (without a tag)
     ECR_REPO_URI: 835405530238.dkr.ecr.us-east-1.amazonaws.com/my-outfit-backend
 
 phases:
@@ -10,26 +9,20 @@ phases:
     commands:
       - set -e
       - REGION=${AWS_REGION:-us-east-1}
-      # Extract the registry host from the repo URI (everything before the first '/')
       - ECR_REGISTRY=$(echo "$ECR_REPO_URI" | cut -d'/' -f1)
       - echo "Logging in to ECR: $ECR_REGISTRY (region=$REGION)"
       - aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-
   build:
     commands:
-      - set -e
       - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}"
       - IMAGE_URI="${ECR_REPO_URI}:${IMAGE_TAG}"
       - echo "Building $IMAGE_URI"
       - docker build -t "$IMAGE_URI" -f backend/Dockerfile backend
-
   post_build:
     commands:
-      - set -e
       - echo "Pushing $IMAGE_URI"
       - docker push "$IMAGE_URI"
       - printf '[{"name":"backend","imageUri":"%s"}]\n' "$IMAGE_URI" > imagedefinitions.json
-
 artifacts:
   files:
     - imagedefinitions.json
