@@ -1,0 +1,6 @@
+# One-time setup
+eb init                # choose "Python" platform in your region
+eb create my-outfit-api  # creates environment and deploys
+
+# Subsequent deploys
+eb deploy
