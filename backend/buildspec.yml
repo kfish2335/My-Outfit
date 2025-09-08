@@ -11,7 +11,7 @@ phases:
       - REGION=${AWS_REGION:-us-east-1}
       - ECR_REGISTRY=$(echo "$ECR_REPO_URI" | cut -d'/' -f1)
       - echo "Logging in to ECR: $ECR_REGISTRY (region=$REGION)"
-      - aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+      - $(aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY")
   build:
     commands:
       - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}"
