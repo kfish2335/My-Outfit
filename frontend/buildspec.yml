@@ -1,0 +1,38 @@
+version: 0.2
+
+env:
+  variables:
+    DIST_DIR: out        # Next.js static export directory
+  parameter-store:
+    CF_DIST_ID: "/my-outfit/cf/distribution-id"  # optional: store in SSM Parameter Store
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - cd frontend
+      - npm ci
+  build:
+    commands:
+      # If using Next 13+/15 app dir: ensure you are able to export static pages
+      # In next.config.js set: output: 'export'
+      - npm run build
+      - test -d $DIST_DIR || (echo "Expected export dir '$DIST_DIR' not found" && exit 1)
+  post_build:
+    commands:
+      # Sync to S3 bucket (replace with your bucket); you can do this in CodeDeploy/Deploy step too.
+      - aws s3 sync $DIST_DIR s3://my-outfit-frontend-bucket/ --delete
+      # Optional: Invalidate CloudFront to refresh cache
+      - |
+        if [ -n "$CF_DIST_ID" ]; then
+          aws cloudfront create-invalidation --distribution-id "$CF_DIST_ID" --paths "/*"
+        else
+          echo "Skipping CloudFront invalidation (no CF_DIST_ID)"
+        fi
+
+artifacts:
+  files:
+    - frontend/$DIST_DIR/**/*
+  base-directory: frontend
+  discard-paths: no
