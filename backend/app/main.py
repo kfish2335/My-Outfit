@@ -39,7 +39,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Outfit API (minimal)", version="1.0")
 
     # CORS
-    origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000, https://main.d3ar6p25m3w6fv.amplifyapp.com").split(",")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[o.strip() for o in origins if o.strip()],
