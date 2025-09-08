@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Outfit, SavedOutfit } from "@/app/types/api";
+import type { Outfit, SavedOutfit } from "@/lib/api";
 import OutfitCard from "@/app/components/OutfitCard";
 import Modal from "@/app/components/Modal";
 

@@ -48,6 +48,20 @@ export type Outfit = {
   // optional per-item colors (hex) if backend sends them
   items_colors?: Partial<Record<keyof OutfitItems, string>>;
 };
+export type FeedbackPayload = {
+  liked?: string[];
+  disliked?: string[];
+  fit_issues?: string[];
+  notes?: string;
+};
+
+export type SavedOutfit = {
+  id: string;
+  savedAt: number;
+  request: SuggestRequest;
+  outfit: Outfit;
+  feedback?: FeedbackPayload;
+};
 
 export type SuggestResponse = { outfits: Outfit[] };
 

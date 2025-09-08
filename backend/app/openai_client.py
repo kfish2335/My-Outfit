@@ -1,6 +1,6 @@
 # app/openai_client.py
 from __future__ import annotations
-
+import boto3
 import json
 import os
 from functools import lru_cache
@@ -140,30 +140,38 @@ def get_openai_credentials() -> Dict[str, str]:
     return {"OPENAI_API_KEY": api_key, "OPENAI_MODEL": model}
 
 
+def _get_secret(key: str) -> Optional[str]:
+    try:
+        client = boto3.client("secretsmanager", region_name=os.getenv("AWS_REGION", "us-east-1"))
+        secret_name = os.getenv("OPENAI_SECRET_NAME", "OPENAI_API_KEY")
+        resp = client.get_secret_value(SecretId=secret_name)
+        secrets = json.loads(resp["SecretString"])
+        return secrets.get(key)
+    except Exception:
+        return os.getenv(key)
+
 def _client() -> OpenAI:
-    creds = get_openai_credentials()
-    return OpenAI(api_key=creds["OPENAI_API_KEY"])
+    api_key = _get_secret("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is missing")
+    return OpenAI(api_key=api_key)
 
-
-def chat_json(system_prompt: str, user_prompt: str, **kwargs: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Minimal helper that calls Chat Completions and returns:
-      { "content": <string>, "raw": <full SDK response as dict> }
-    Adjust to Responses API if you prefer; the credential loading stays the same.
-    """
+# ✅ Flexible: system + user prompts
+def chat_json(system_prompt: str, user_prompt: str, *, model: Optional[str] = None) -> dict:
     client = _client()
-    model = get_openai_credentials()["OPENAI_MODEL"]
+    mdl = model or _get_secret("OPENAI_MODEL") or "gpt-4o-mini"
 
     resp = client.chat.completions.create(
-        model=model,
+        model=mdl,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        # If you want structured JSON, uncomment:
-        # response_format={"type": "json_object"},
-        **kwargs,
+        temperature=0.6,
     )
-    choice = resp.choices[0]
-    content = choice.message.content or ""
-    return {"content": content, "raw": resp.model_dump()}
+
+    content = resp.choices[0].message.content.strip()
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return {"error": "Invalid JSON", "raw": content}

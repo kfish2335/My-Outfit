@@ -1,8 +1,10 @@
-// app/components/OutfitCard.tsx
 "use client";
 
 import Image from "next/image";
-import { Outfit } from "@/app/types/api";
+import {
+  OutfitItems,
+  type Outfit,
+} from "@/lib/api";
 
 /** color word → hex (expand anytime) */
 const COLOR_MAP: Record<string, string> = {
@@ -42,29 +44,39 @@ const COLOR_MAP: Record<string, string> = {
   pink: "#ec4899",
 };
 
-// explicit, uniform sizes
+// ✅ Make sizes explicit and uniform
 const ICON_SIZE = 44;
 const SWATCH_SIZE = 44;
 
-type ItemKey = "top" | "bottom" | "shoes" | "outerwear" | "layer" | "accessories";
-type ItemsColors = Partial<Record<ItemKey, string>>;
+type ItemKey = keyof OutfitItems; // "top" | "bottom" | "shoes" | "outerwear" | "layer" | "accessories"
 
-/** return per-item color from explicit items_colors or infer from text */
+/** Resolve a per-item color (either provided as hex via items_colors or inferred from text keywords). */
 function perItemColor(
   key: ItemKey,
-  text?: string | null,
-  itemsColors?: ItemsColors
+  text: string | null | undefined,
+  itemsColors?: Partial<Record<ItemKey, string>>
 ): string | undefined {
-  const hex = (itemsColors?.[key] ?? "").trim();
-  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)) return hex;
-
+  const hexMaybe = (itemsColors?.[key] ?? "").trim();
+  if (typeof hexMaybe === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hexMaybe)) {
+    return hexMaybe;
+  }
   const t = (text || "").toLowerCase();
   for (const k of Object.keys(COLOR_MAP)) {
     if (t.includes(k) || t.includes(`dark ${k}`) || t.includes(`light ${k}`)) {
-      return COLOR_MAP[k as keyof typeof COLOR_MAP];
+      return COLOR_MAP[k];
     }
   }
   return undefined;
+}
+
+/** Safely get the first accessories icon (works if backend sent array or nothing). */
+function firstAccessoriesImg(
+  accessoriesIcons?: (string | null)[] | string | null
+): string | null {
+  if (Array.isArray(accessoriesIcons)) {
+    return accessoriesIcons[0] ?? null;
+  }
+  return (accessoriesIcons as string | null) ?? null;
 }
 
 export default function OutfitCard({
@@ -78,10 +90,7 @@ export default function OutfitCard({
 }) {
   const it = outfit.items || {};
   const img = outfit.icons_img || {};
-  // Safely read optional items_colors typed as ItemsColors
-  const itemsColors: ItemsColors | undefined = (outfit as Outfit & {
-    items_colors?: ItemsColors;
-  }).items_colors;
+  const itemsColors = outfit.items_colors; // ✅ typed, no any
 
   const cTop = perItemColor("top", it.top, itemsColors);
   const cBottom = perItemColor("bottom", it.bottom, itemsColors);
@@ -90,6 +99,9 @@ export default function OutfitCard({
   const cLayer = perItemColor("layer", it.layer, itemsColors);
   const firstAccessory = (it.accessories || [])[0];
   const cAcc = perItemColor("accessories", firstAccessory, itemsColors);
+
+  // accessories icon (array-aware)
+  const accImg = firstAccessoriesImg(img.accessories as unknown as (string | null)[] | string | null);
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--text)] p-4 shadow-sm">
@@ -101,7 +113,7 @@ export default function OutfitCard({
       <ItemRow
         label="Accessories"
         text={(it.accessories || []).join(", ")}
-        img={(img.accessories && img.accessories[0]) || null}
+        img={accImg}
         emoji="⌚"
         color={cAcc}
       />
@@ -147,9 +159,10 @@ function ItemRow({
   emoji: string;
   color?: string;
 }) {
-  const ringStyle: React.CSSProperties | undefined = color
-    ? { boxShadow: `0 0 0 2px ${color} inset` }
-    : undefined;
+  const ringStyle = color ? { boxShadow: `0 0 0 2px ${color} inset` } : undefined;
+
+  // Make a data URL for next/image when we have base64
+  const dataUrl = img ? `data:image/png;base64,${img}` : null;
 
   return (
     <div className="flex items-center gap-3 py-2 border-b border-[var(--border)] last:border-b-0">
@@ -158,7 +171,7 @@ function ItemRow({
       </span>
 
       <span className="inline-flex items-center gap-3 flex-1">
-        {/* icon with hard 44×44 size */}
+        {/* ✅ icon with hard 44×44 size */}
         <span
           className="icon-shell"
           style={{
@@ -170,17 +183,16 @@ function ItemRow({
             display: "grid",
             placeItems: "center",
             background: "var(--card)",
-            overflow: "hidden",
           }}
         >
-          {img ? (
+          {dataUrl ? (
             <Image
-              // data URL constructed by backend: raw base64 png
-              src={`data:image/png;base64,${img}`}
+              src={dataUrl}
               alt={label}
               width={ICON_SIZE - 8}
               height={ICON_SIZE - 8}
               style={{ objectFit: "contain" }}
+              // data URLs don’t require next.config domains
               priority={false}
             />
           ) : (
@@ -188,7 +200,7 @@ function ItemRow({
           )}
         </span>
 
-        {/* per-item color swatch, hard 44×44 */}
+        {/* ✅ per-item color swatch, hard 44×44 */}
         <span
           style={{
             width: SWATCH_SIZE,
