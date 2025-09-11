@@ -1,0 +1,38 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1            # ← change if needed
+    AWS_ACCOUNT_ID: "835405530238"           # ← change to your AWS Account ID
+    ECR_REPO_BACKEND: "my-outfit-backend"    # ← your ECR repo name
+    IMAGE_TAG: latest
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging into ECR..."
+      - aws --version
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION \
+        | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+      - export ECR_BACKEND=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO_BACKEND
+      - export GIT_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}
+      - echo "ECR_BACKEND=$ECR_BACKEND"
+      - echo "GIT_TAG=$GIT_TAG"
+  build:
+    commands:
+      - echo "Building backend image..."
+      - docker build -f backend/Dockerfile -t $ECR_BACKEND:$IMAGE_TAG backend
+      - docker tag $ECR_BACKEND:$IMAGE_TAG $ECR_BACKEND:$GIT_TAG
+  post_build:
+    commands:
+      - echo "Pushing backend image..."
+      - docker push $ECR_BACKEND:$IMAGE_TAG
+      - docker push $ECR_BACKEND:$GIT_TAG
+
+      # ECS deploy artifact (container name MUST match your task def container name)
+      - printf '[{"name":"backend","imageUri":"%s"}]' "$ECR_BACKEND:$GIT_TAG" > imagedefinitions-backend.json
+
+artifacts:
+  files:
+    - imagedefinitions-backend.json
