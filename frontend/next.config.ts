@@ -1,9 +1,7 @@
-import type { NextConfig } from "next";
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // static export
+  output: 'export',               // ← this replaces `next export`
+  images: { unoptimized: true },  // if you used next/image
+  trailingSlash: true,            // so /generate and /generate/ both work
 };
-
-module.exports = nextConfig
-export default nextConfig;
+module.exports = nextConfig;
