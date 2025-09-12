@@ -1,0 +1,31 @@
+# VCS
+.git
+.gitignore
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+
+# Node / Frontend
+frontend/
+node_modules/
+**/node_modules/
+
+# Local env & secrets (don’t bake into images)
+.env
+*.env
+backend.env
+.env.*
+secrets.*
+*.pem
+*.key
+
+# Docker
+Dockerfile
+docker-compose.yml
