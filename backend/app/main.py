@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import json
-import os
+import logging,os
 import re
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 from app.models.schema import (
     SuggestRequest, SuggestResponse,
@@ -79,6 +80,15 @@ def create_app() -> FastAPI:
             status_code=500,
             detail={"error": "bad_model_json", "raw": str(obj)[:400]},
         )
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        logging.basicConfig(level=logging.INFO)
+        logging.info("[startup] FastAPI app starting")
+        logging.info("PORT=%s", os.getenv("PORT"))
+        logging.info("OPENAI_API_KEY=%s", "set" if os.getenv("OPENAI_API_KEY") else "missing")
+        yield
+        logging.info("[shutdown] FastAPI app shutting down")
 
 
     @app.post("/suggest")
