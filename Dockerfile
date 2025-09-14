@@ -24,8 +24,8 @@ COPY backend/app /app/app
 # (The line above is unnecessary if they’re already under backend/app which we copied)
 
 # Set env + expose port
-ENV PORT=8000
-EXPOSE 8000
+ENV PORT=8080
+EXPOSE 8080
 
 # Run the FastAPI app
 CMD ["sh", "-lc", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
